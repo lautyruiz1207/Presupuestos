@@ -1,0 +1,697 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Presupuestos - Picoservice</title>
+  <style>
+    :root {
+      --bg: #070a0f;
+      --panel: #0d1219;
+      --panel-2: #151d27;
+      --line: #253140;
+      --text: #f3f7fb;
+      --muted: #a7b2bd;
+      --blue: #2086d7;
+      --green: #49c887;
+      --red: #ff7676;
+      --paper: #f1f5f9;
+      --ink: #0d1724;
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, Segoe UI, sans-serif; }
+    button, input, textarea { font: inherit; }
+    .app { max-width: 1280px; margin: 0 auto; padding: 22px; }
+    .hero { display: grid; place-items: center; margin-bottom: 12px; }
+    .app-logo { width: min(390px, 76vw); max-height: 150px; object-fit: contain; border-radius: 14px; }
+    .home-panel { margin-bottom: 18px; padding: 0; border: 0; background: transparent; }
+    .home-actions { display: grid; grid-template-columns: minmax(230px, 1.2fr) repeat(2, minmax(180px, 1fr)); gap: 13px; }
+    .home-action { border: 1px solid rgba(255,255,255,.08); border-radius: 20px; padding: 16px; color: var(--text); text-align: left; background: rgba(21,29,39,.86); box-shadow: 0 18px 38px rgba(0,0,0,.30); cursor: pointer; transform: translateY(0); transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease; }
+    .home-action:hover { transform: translateY(-3px); border-color: rgba(32,134,215,.72); box-shadow: 0 24px 48px rgba(0,0,0,.38); }
+    .home-action.primary { min-height: 132px; background: linear-gradient(135deg, var(--blue), #49c887); color: #06121d; border-color: transparent; box-shadow: 0 24px 55px rgba(32,134,215,.24); }
+    .home-action small { display: block; margin-bottom: 8px; font-size: 11px; font-weight: 950; letter-spacing: 1px; text-transform: uppercase; opacity: .78; }
+    .home-action strong { display: block; font-size: 20px; line-height: 1.05; }
+    .home-action span { display: block; margin-top: 8px; color: inherit; opacity: .78; font-size: 13px; }
+    .layout { display: grid; grid-template-columns: minmax(340px, .95fr) minmax(360px, 1.05fr); gap: 16px; align-items: start; }
+    .panel { border: 1px solid var(--line); border-radius: 18px; background: var(--panel); overflow: hidden; }
+    .panel-head { display: flex; justify-content: space-between; align-items: center; padding: 15px 16px; border-bottom: 1px solid var(--line); }
+    .panel-head h2 { margin: 0; font-size: 18px; }
+    .panel-body { padding: 16px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
+    .wide { grid-column: 1 / -1; }
+    label { display: block; color: var(--muted); font-size: 12px; font-weight: 800; }
+    label span { display: block; margin-bottom: 5px; }
+    input, textarea { width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 11px; color: var(--text); background: #0f151c; outline: 0; }
+    textarea { min-height: 76px; resize: vertical; }
+    input:focus, textarea:focus { border-color: var(--blue); }
+    .section-title { margin: 18px 0 9px; font-weight: 900; text-transform: uppercase; letter-spacing: .6px; }
+    .items { display: grid; gap: 10px; }
+    .item-row { display: grid; grid-template-columns: 1fr 120px auto; gap: 8px; align-items: start; padding: 10px; border: 1px solid var(--line); border-radius: 13px; background: #111821; }
+    .item-row textarea { min-height: 47px; padding: 9px; }
+    .item-row input { padding: 9px; }
+    .sum-check { display: inline-flex; align-items: center; gap: 6px; width: auto; padding: 9px; color: var(--muted); font-size: 12px; font-weight: 850; }
+    .sum-check input { width: auto; }
+    .mini-actions { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 9px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 14px; }
+    .btn { border: 0; border-radius: 11px; padding: 11px 14px; background: var(--panel-2); color: var(--text); font-weight: 850; cursor: pointer; }
+    .btn.primary { background: var(--blue); color: #07111a; }
+    .btn.green { background: var(--green); color: #06150e; }
+    .btn.red { color: var(--red); }
+    .total-box { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; padding: 14px; border-radius: 14px; background: #101923; border: 1px solid var(--line); }
+    .total-box small { display: block; color: var(--muted); font-weight: 850; text-transform: uppercase; letter-spacing: .7px; }
+    .total-box strong { font-size: 24px; color: var(--green); }
+    .card-preview { background: #dfe7f1; color: var(--ink); padding: 18px; border-radius: 20px; box-shadow: 0 18px 45px rgba(0,0,0,.34); }
+    .budget-card { position: relative; min-height: 540px; padding: 20px; border: 1px solid #c8d4e1; border-radius: 17px; background: linear-gradient(180deg, #f8fafc 0, var(--paper) 100%); }
+    .card-date { position: absolute; top: 14px; left: 16px; z-index: 2; padding: 5px 9px; border: 1px solid #c8d4e1; border-radius: 999px; color: #162235; background: rgba(248,250,252,.88); font-size: 12px; font-weight: 900; }
+    .logo { display: block; width: min(500px, 100%); max-width: 100%; margin: 0 auto 10px; object-fit: contain; }
+    .card-top { display: block; border-bottom: 1px solid #c8d4e1; padding-bottom: 14px; }
+    .card-title h2 { margin: 0; width: 100%; font-size: 25px; letter-spacing: .8px; text-align: center; text-transform: uppercase; }
+    .card-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0; }
+    .field { padding: 10px; border: 1px solid #c8d4e1; border-radius: 10px; background: #fff; }
+    .field small { display: block; color: #5b6b7f; font-weight: 850; font-size: 10px; letter-spacing: .7px; text-transform: uppercase; }
+    .field b { display: block; margin-top: 4px; font-size: 16px; min-height: 20px; }
+    .budget-lines { display: grid; gap: 8px; }
+    .budget-line { display: grid; grid-template-columns: 1fr auto; gap: 10px; padding: 10px; border-radius: 10px; background: #fff; border: 1px solid #c8d4e1; }
+    .budget-line.no-total { opacity: .78; }
+    .budget-line b { color: #0d1724; font-size: 13px; white-space: pre-wrap; }
+    .budget-line span { color: #34465a; font-weight: 900; text-align: right; white-space: nowrap; }
+    .card-total { margin-top: 14px; padding: 14px; border-radius: 14px; background: #10263f; color: #fff; text-align: right; }
+    .card-total small { display: block; color: #c4d2e2; font-weight: 900; letter-spacing: .7px; text-transform: uppercase; }
+    .card-total strong { display: block; font-size: 26px; }
+    .validity { margin: 12px 0 0; color: #34465a; font-size: 12px; font-weight: 850; }
+    .contact-corner { display: grid; gap: 7px; justify-items: end; margin-top: 14px; color: #172336; font-size: 12px; font-weight: 900; }
+    .contact-line { display: inline-flex; align-items: center; gap: 7px; padding: 7px 9px; border-radius: 999px; background: #fff; border: 1px solid #c8d4e1; }
+    .contact-logo { display: block; width: 20px; height: 20px; object-fit: contain; flex: 0 0 20px; }
+    .history { margin-top: 16px; }
+    .search { margin-bottom: 10px; }
+    .records { display: grid; gap: 9px; max-height: 420px; overflow: auto; }
+    .record { border: 1px solid var(--line); border-radius: 13px; padding: 11px; background: #111821; cursor: pointer; }
+    .record:hover { border-color: var(--blue); }
+    .record b { display: block; }
+    .record span { display: block; color: var(--muted); font-size: 13px; margin-top: 3px; }
+    .toast { display: none; position: fixed; right: 20px; bottom: 20px; padding: 12px 14px; border-radius: 12px; background: var(--green); color: #06150e; font-weight: 900; }
+    .image-modal { display: none; position: fixed; inset: 0; z-index: 20; padding: 18px; background: rgba(0,0,0,.72); place-items: center; }
+    .image-modal.open { display: grid; }
+    .image-modal-card { width: min(760px, 100%); max-height: 94vh; overflow: auto; padding: 14px; border: 1px solid var(--line); border-radius: 18px; background: var(--panel); }
+    .image-modal-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .image-modal-head h2 { margin: 0; font-size: 18px; }
+    .image-modal-card img { display: block; width: 100%; border-radius: 12px; background: #fff; }
+    .image-modal-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .close-modal { border: 0; color: var(--text); background: transparent; font-size: 24px; cursor: pointer; }
+    @media (max-width: 900px) {
+      .app { padding: 14px; }
+      .app-logo { width: min(310px, 80vw); max-height: 118px; }
+      .home-actions, .layout, .grid, .card-meta { grid-template-columns: 1fr; }
+      .home-action.primary { min-height: 112px; }
+      .item-row { grid-template-columns: 1fr; }
+      .budget-card { padding: 15px; }
+      .logo { width: 100%; }
+      .card-title h2 { font-size: 21px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="hero">
+      <img class="app-logo" src="./logo-picoservice-inicio.png" alt="Picoservice">
+    </header>
+
+    <section class="home-panel" aria-label="Inicio">
+      <div class="home-actions">
+        <button class="home-action primary" type="button" data-jump="form">
+          <small>Principal</small>
+          <strong>Crear presupuesto</strong>
+          <span>Renglones libres con total automatico.</span>
+        </button>
+        <button class="home-action" type="button" data-jump="search">
+          <small>Clientes</small>
+          <strong>Buscar presupuesto</strong>
+          <span>Por cliente, patente o vehiculo.</span>
+        </button>
+        <button class="home-action" type="button" data-jump="records">
+          <small>Historial</small>
+          <strong>Ver recientes</strong>
+          <span>Ultimos presupuestos guardados.</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="layout">
+      <article class="panel form-panel">
+        <div class="panel-head"><h2>Cargar presupuesto</h2><button class="btn red" id="clearForm">Limpiar</button></div>
+        <div class="panel-body">
+          <form id="budgetForm">
+            <div class="grid">
+              <label><span>Fecha</span><input id="date" type="date" required></label>
+              <label><span>Validez</span><input id="validity" inputmode="numeric" value="7"></label>
+              <label><span>Cliente</span><input id="client" placeholder="Nombre del cliente"></label>
+              <label><span>Telefono</span><input id="phone" placeholder="Para buscar o mandar mensaje"></label>
+              <label><span>Patente</span><input id="plate" placeholder="AB 123 CD"></label>
+              <label><span>Vehiculo</span><input id="vehicle" placeholder="Marca / modelo / motor"></label>
+              <label class="wide"><span>Kilometros</span><input id="km" inputmode="numeric" placeholder="Ej: 85200"></label>
+            </div>
+
+            <p class="section-title">Renglones del presupuesto</p>
+            <div class="items" id="items"></div>
+            <div class="mini-actions">
+              <button class="btn" type="button" id="addItem">Agregar renglon</button>
+              <button class="btn" type="button" id="addTitle">Agregar titulo / opcion</button>
+            </div>
+
+            <label class="wide" style="margin-top: 12px"><span>Observaciones</span><textarea id="notes" placeholder="Ej: valores sujetos a disponibilidad, no incluye adicionales no detallados..."></textarea></label>
+
+            <div class="total-box">
+              <div><small>Total calculado</small><strong id="formTotal">$ 0</strong></div>
+              <span>Solo suma renglones marcados</span>
+            </div>
+
+            <div class="actions">
+              <button class="btn primary" type="submit">Guardar presupuesto</button>
+              <button class="btn green" type="button" id="imageBtn">Guardar / enviar JPG</button>
+            </div>
+          </form>
+
+          <section class="history">
+            <input class="search" id="search" placeholder="Buscar por cliente, patente, vehiculo o item...">
+            <div class="records" id="records"></div>
+          </section>
+        </div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-head"><h2>Vista del presupuesto</h2><span id="previewTotal">$ 0</span></div>
+        <div class="panel-body">
+          <div class="card-preview">
+            <div class="budget-card" id="card">
+              <div class="card-date" id="vDate">-</div>
+              <div class="card-top">
+                <img class="logo" src="./logo-picoservice-transparente.png" alt="Picoservice">
+                <div class="card-title"><h2>Presupuesto</h2></div>
+              </div>
+              <div class="card-meta">
+                <div class="field"><small>Cliente</small><b id="vClient">-</b></div>
+                <div class="field"><small>Patente</small><b id="vPlate">-</b></div>
+                <div class="field"><small>Vehiculo</small><b id="vVehicle">-</b></div>
+                <div class="field"><small>Kilometros</small><b id="vKm">-</b></div>
+              </div>
+              <p class="section-title">Detalle</p>
+              <div class="budget-lines" id="vItems"></div>
+              <div class="card-total"><small>Total</small><strong id="vTotal">$ 0</strong></div>
+              <p class="validity" id="vValidity">Presupuesto valido por 7 dias. Valores sujetos a disponibilidad y actualizacion de repuestos.</p>
+              <p class="validity" id="vNotes" hidden></p>
+              <div class="contact-corner">
+                <span class="contact-line"><img class="contact-logo" src="./icon-whatsapp-small.png" alt="WhatsApp">2302-379055</span>
+                <span class="contact-line"><img class="contact-logo" src="./icon-maps-small.png" alt="Ubicacion">Calle 2 entre 7 y 9 Nro 345</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <div class="image-modal" id="imageModal">
+    <div class="image-modal-card">
+      <div class="image-modal-head">
+        <h2>Imagen lista para guardar o enviar</h2>
+        <button class="close-modal" id="closeImageModal" type="button">X</button>
+      </div>
+      <p class="date" id="imageStatus">Generando imagen...</p>
+      <img id="generatedImage" alt="Presupuesto generado">
+      <div class="image-modal-actions">
+        <a class="btn green" id="downloadImage" download="presupuesto-picoservice.jpg">Descargar JPG</a>
+        <button class="btn primary" type="button" id="shareImage">Enviar imagen</button>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="toast">Presupuesto guardado</div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const storageKey = "picoservice_budgets_v1";
+    const cloudSyncUrl = "https://script.google.com/macros/s/AKfycbwrxY29Ijj0N8a7-EpPkvFVl7eSTe-mhyErToHFn1H1Ifar9w8wxV-iHGCa5-TjcGGP/exec";
+    let records = JSON.parse(localStorage.getItem(storageKey) || "[]");
+    let currentId = null;
+    let generatedFile = null;
+    let generatedUrl = null;
+
+    function today() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function formatDate(value) {
+      if (!value) return "-";
+      const [year, month, day] = value.split("-");
+      return year && month && day ? `${day}/${month}/${year}` : value;
+    }
+
+    function upper(value) {
+      return (value || "").trim().toUpperCase();
+    }
+
+    function numberValue(value) {
+      const digits = String(value || "").replace(/\D/g, "");
+      return digits ? Number(digits) : 0;
+    }
+
+    function money(value) {
+      return `$ ${Number(value || 0).toLocaleString("es-AR")}`;
+    }
+
+    function formatMoneyInput(value) {
+      const n = numberValue(value);
+      return n ? n.toLocaleString("es-AR") : "";
+    }
+
+    function formatKmValue(value) {
+      const n = numberValue(value);
+      return n ? n.toLocaleString("es-AR") : "";
+    }
+
+    function displayKm(value) {
+      const formatted = formatKmValue(value);
+      return formatted ? `${formatted} KM` : "-";
+    }
+
+    function itemTemplate(item = {}) {
+      const id = item.id || String(Date.now() + Math.random());
+      const sum = item.sum !== false;
+      const title = item.title === true;
+      const row = document.createElement("div");
+      row.className = "item-row";
+      row.dataset.id = id;
+      row.innerHTML = `
+        <textarea class="item-desc" placeholder="${title ? "Ej: OPCION 1" : "Descripcion"}">${item.desc || ""}</textarea>
+        <input class="item-price" inputmode="numeric" placeholder="$" value="${item.price ? formatMoneyInput(item.price) : ""}" ${title ? "hidden" : ""}>
+        <label class="sum-check" ${title ? "hidden" : ""}><input class="item-sum" type="checkbox" ${sum ? "checked" : ""}> Sumar</label>
+        <div class="mini-actions wide">
+          <button class="btn" type="button" data-action="duplicate">Duplicar</button>
+          <button class="btn red" type="button" data-action="remove">Quitar</button>
+        </div>
+      `;
+      return row;
+    }
+
+    function addItem(item) {
+      $("items").appendChild(itemTemplate(item));
+      bindItemEvents();
+      renderPreview();
+    }
+
+    function bindItemEvents() {
+      document.querySelectorAll(".item-row").forEach(row => {
+        if (row.dataset.bound) return;
+        row.dataset.bound = "1";
+        row.addEventListener("input", event => {
+          if (event.target.classList.contains("item-desc")) event.target.value = event.target.value.toUpperCase();
+          if (event.target.classList.contains("item-price")) event.target.value = formatMoneyInput(event.target.value);
+          renderPreview();
+        });
+        row.addEventListener("change", renderPreview);
+        row.addEventListener("click", event => {
+          const action = event.target.dataset.action;
+          if (!action) return;
+          if (action === "remove") row.remove();
+          if (action === "duplicate") addItem(readItem(row));
+          renderPreview();
+        });
+      });
+    }
+
+    function readItem(row) {
+      return {
+        id: row.dataset.id,
+        desc: upper(row.querySelector(".item-desc").value),
+        price: numberValue(row.querySelector(".item-price")?.value),
+        sum: row.querySelector(".item-sum") ? row.querySelector(".item-sum").checked : false,
+        title: !row.querySelector(".item-price") || row.querySelector(".item-price").hidden
+      };
+    }
+
+    function getItems() {
+      return Array.from(document.querySelectorAll(".item-row")).map(readItem).filter(item => item.desc || item.price);
+    }
+
+    function totalFor(items) {
+      return items.reduce((sum, item) => sum + (item.sum ? Number(item.price || 0) : 0), 0);
+    }
+
+    function formData() {
+      const items = getItems();
+      return {
+        id: currentId || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())),
+        date: $("date").value,
+        validity: upper($("validity").value) || "7",
+        client: upper($("client").value),
+        phone: upper($("phone").value),
+        plate: upper($("plate").value),
+        vehicle: upper($("vehicle").value),
+        km: $("km").value.trim(),
+        notes: $("notes").value.trim().toUpperCase(),
+        items,
+        total: totalFor(items),
+        savedAt: new Date().toISOString()
+      };
+    }
+
+    function setForm(data) {
+      currentId = data.id || null;
+      ["date","validity","client","phone","plate","vehicle","km","notes"].forEach(id => $(id).value = data[id] || "");
+      $("items").innerHTML = "";
+      (data.items && data.items.length ? data.items : [{}, {}]).forEach(addItem);
+      renderPreview();
+    }
+
+    function renderPreview() {
+      const data = formData();
+      $("vDate").textContent = formatDate(data.date);
+      $("vClient").textContent = data.client || "-";
+      $("vPlate").textContent = data.plate || "-";
+      $("vVehicle").textContent = data.vehicle || "-";
+      $("vKm").textContent = displayKm(data.km);
+      $("vTotal").textContent = money(data.total);
+      $("formTotal").textContent = money(data.total);
+      $("previewTotal").textContent = money(data.total);
+      $("vValidity").textContent = `Presupuesto valido por ${data.validity || "7"} dias. Valores sujetos a disponibilidad y actualizacion de repuestos.`;
+      $("vNotes").textContent = data.notes;
+      $("vNotes").hidden = !data.notes;
+      $("vItems").innerHTML = data.items.length ? data.items.map(item => `
+        <div class="budget-line ${item.sum ? "" : "no-total"}">
+          <b>${item.desc}</b>
+          <span>${item.price ? money(item.price) : ""}</span>
+        </div>
+      `).join("") : `<div class="budget-line"><b>SIN ITEMS CARGADOS</b><span></span></div>`;
+    }
+
+    function saveRecords() {
+      localStorage.setItem(storageKey, JSON.stringify(records));
+    }
+
+    function renderRecords() {
+      const q = $("search").value.toLowerCase();
+      const filtered = records.filter(item => JSON.stringify(item).toLowerCase().includes(q));
+      $("records").innerHTML = filtered.length ? filtered.map(item => `
+        <div class="record" data-id="${item.id}">
+          <b>${item.plate || "Sin patente"} - ${item.client || "Sin cliente"}</b>
+          <span>${item.date || "Sin fecha"} - ${item.vehicle || "Sin vehiculo"} - ${money(item.total)}</span>
+          <span>${(item.items || []).map(line => line.desc).join(" / ") || "Sin detalle"}</span>
+        </div>
+      `).join("") : `<div class="record"><b>No hay presupuestos todavia</b><span>Carga el primero con el boton principal.</span></div>`;
+      document.querySelectorAll(".record[data-id]").forEach(row => row.addEventListener("click", () => {
+        const item = records.find(r => r.id === row.dataset.id);
+        if (item) setForm(item);
+      }));
+    }
+
+    function drawRoundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
+
+    function fitText(ctx, text, x, y, maxWidth, lineHeight, maxLines = 2) {
+      const words = String(text || "").split(/\s+/).filter(Boolean);
+      let line = "";
+      const lines = [];
+      words.forEach(word => {
+        const test = line ? `${line} ${word}` : word;
+        if (ctx.measureText(test).width > maxWidth && line) {
+          lines.push(line);
+          line = word;
+        } else line = test;
+      });
+      if (line) lines.push(line);
+      const visible = lines.slice(0, maxLines);
+      if (lines.length > maxLines && visible.length) visible[visible.length - 1] += "...";
+      visible.forEach((value, index) => ctx.fillText(value, x, y + index * lineHeight));
+      return y + visible.length * lineHeight;
+    }
+
+    function wrappedLineCount(ctx, text, maxWidth, maxLines = 2) {
+      const words = String(text || "").split(/\s+/).filter(Boolean);
+      if (!words.length) return 1;
+      let line = "";
+      let count = 0;
+      words.forEach(word => {
+        const test = line ? `${line} ${word}` : word;
+        if (ctx.measureText(test).width > maxWidth && line) {
+          count += 1;
+          line = word;
+        } else line = test;
+      });
+      if (line) count += 1;
+      return Math.min(Math.max(count, 1), maxLines);
+    }
+
+    function loadImage(src) {
+      const image = new Image();
+      image.src = src;
+      return new Promise((resolve, reject) => {
+        image.onload = () => resolve(image);
+        image.onerror = reject;
+      });
+    }
+
+    function blobToBase64(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result).split(",")[1] || "");
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    async function saveBudgetToGoogle(data, blob, filename) {
+      if (!cloudSyncUrl) return false;
+      const base64 = await blobToBase64(blob);
+      await fetch(cloudSyncUrl, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          data,
+          image: { filename, base64 }
+        })
+      });
+      return true;
+    }
+
+    function filenameFor(data) {
+      const plate = (data.plate || "SIN-PATENTE").replace(/[^A-Z0-9]+/g, "-");
+      const date = data.date || today();
+      return `PICOSERVICE-PRESUPUESTO-${plate}-${date}.jpg`;
+    }
+
+    async function createJpg() {
+      const data = formData();
+      const lines = data.items.length ? data.items : [{ desc: "SIN ITEMS CARGADOS", price: 0, sum: false }];
+      const measureCanvas = document.createElement("canvas");
+      const measureCtx = measureCanvas.getContext("2d");
+      measureCtx.font = "900 15px Arial";
+      const rowHeights = lines.map(item => 32 + wrappedLineCount(measureCtx, item.desc, 440, 2) * 18);
+      const detailHeight = rowHeights.reduce((sum, height) => sum + height, 0);
+      const notesHeight = data.notes ? 58 : 0;
+      const canvas = document.createElement("canvas");
+      canvas.width = 720;
+      canvas.height = Math.max(1000, 800 + detailHeight + notesHeight);
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#eef3f8";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = "#122a44";
+      ctx.lineWidth = 4;
+      drawRoundRect(ctx, 18, 18, canvas.width - 36, canvas.height - 36, 26);
+      ctx.stroke();
+
+      const [logo, whatsappIcon, mapsIcon] = await Promise.all([
+        loadImage("./logo-picoservice-transparente.png"),
+        loadImage("./icon-whatsapp-small.png"),
+        loadImage("./icon-maps-small.png")
+      ]);
+      ctx.drawImage(logo, 110, 44, 500, 219);
+      ctx.fillStyle = "#10263f";
+      ctx.font = "900 18px Arial";
+      ctx.fillText(formatDate(data.date), 42, 58);
+      ctx.textAlign = "center";
+      ctx.font = "900 34px Arial";
+      ctx.fillText("PRESUPUESTO", canvas.width / 2, 305);
+      ctx.textAlign = "left";
+
+      const info = [
+        ["CLIENTE", data.client || "-", 42, 330, 300],
+        ["PATENTE", data.plate || "-", 378, 330, 300],
+        ["VEHICULO", data.vehicle || "-", 42, 416, 300],
+        ["KM", displayKm(data.km), 378, 416, 300]
+      ];
+      info.forEach(([label, value, x, y, w]) => {
+        drawRoundRect(ctx, x, y, w, 72, 12);
+        ctx.fillStyle = "#ffffff";
+        ctx.fill();
+        ctx.strokeStyle = "#c3ceda";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = "#5b6b7f";
+        ctx.font = "900 13px Arial";
+        ctx.fillText(label, x + 14, y + 24);
+        ctx.fillStyle = "#10263f";
+        ctx.font = "900 21px Arial";
+        fitText(ctx, value, x + 14, y + 54, w - 28, 20, 1);
+      });
+
+      let y = 535;
+      ctx.fillStyle = "#10263f";
+      ctx.font = "900 20px Arial";
+      ctx.fillText("DETALLE", 42, y);
+      y += 34;
+      lines.forEach((item, index) => {
+        const itemHeight = rowHeights[index];
+        drawRoundRect(ctx, 42, y - 22, 636, itemHeight - 7, 9);
+        ctx.fillStyle = "#ffffff";
+        ctx.fill();
+        ctx.strokeStyle = "#c3ceda";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.fillStyle = item.sum ? "#10263f" : "#5b6b7f";
+        ctx.font = item.sum ? "900 15px Arial" : "900 15px Arial";
+        fitText(ctx, item.desc, 58, y, 440, 18, 2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = "#34465a";
+        ctx.font = "900 16px Arial";
+        ctx.fillText(item.price ? money(item.price) : "", 662, y);
+        ctx.textAlign = "left";
+        y += itemHeight;
+      });
+
+      drawRoundRect(ctx, 42, y + 4, 636, 74, 14);
+      ctx.fillStyle = "#10263f";
+      ctx.fill();
+      ctx.fillStyle = "#c4d2e2";
+      ctx.font = "900 14px Arial";
+      ctx.textAlign = "right";
+      ctx.fillText("TOTAL", 662, y + 30);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "900 32px Arial";
+      ctx.fillText(money(data.total), 662, y + 62);
+      ctx.textAlign = "left";
+      y += 106;
+
+      ctx.fillStyle = "#34465a";
+      ctx.font = "800 15px Arial";
+      y = fitText(ctx, `Presupuesto valido por ${data.validity || "7"} dias. Valores sujetos a disponibilidad y actualizacion de repuestos.`, 42, y, 636, 20, 2) + 8;
+      if (data.notes) y = fitText(ctx, data.notes, 42, y, 636, 20, 2) + 8;
+
+      const right = canvas.width - 42;
+      ctx.textAlign = "right";
+      ctx.fillStyle = "#10263f";
+      ctx.font = "900 22px Arial";
+      ctx.fillText("2302-379055", right, canvas.height - 82);
+      ctx.font = "900 17px Arial";
+      ctx.fillText("CALLE 2 ENTRE 7 Y 9 NRO 345", right, canvas.height - 48);
+      ctx.textAlign = "left";
+      ctx.drawImage(whatsappIcon, right - 202, canvas.height - 103, 30, 30);
+      ctx.drawImage(mapsIcon, right - 330, canvas.height - 68, 30, 30);
+
+      return new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("No se pudo generar la imagen")), "image/jpeg", 0.92));
+    }
+
+    async function saveJpg() {
+      $("imageStatus").textContent = "Generando imagen...";
+      $("generatedImage").removeAttribute("src");
+      $("imageModal").classList.add("open");
+      try {
+        const data = formData();
+        const blob = await createJpg();
+        generatedFile = new File([blob], filenameFor(data), { type: "image/jpeg" });
+        const existingIndex = records.findIndex(item => item.id === data.id);
+        if (existingIndex >= 0) records[existingIndex] = data;
+        else records.unshift(data);
+        currentId = data.id;
+        saveRecords();
+        renderRecords();
+        if (generatedUrl) URL.revokeObjectURL(generatedUrl);
+        generatedUrl = URL.createObjectURL(blob);
+        $("generatedImage").src = generatedUrl;
+        $("downloadImage").href = generatedUrl;
+        $("downloadImage").download = generatedFile.name;
+        $("imageStatus").textContent = "Imagen generada. Guardando en Google...";
+        try {
+          const synced = await saveBudgetToGoogle(data, blob, generatedFile.name);
+          $("imageStatus").textContent = synced
+            ? "Imagen generada y enviada a Google. Podes descargarla o compartirla."
+            : "Imagen generada. Falta pegar la URL del Apps Script para guardar en Google.";
+        } catch (syncError) {
+          $("imageStatus").textContent = "Imagen generada. No se pudo guardar en Google, pero podes descargarla o enviarla.";
+        }
+      } catch (error) {
+        $("imageStatus").textContent = "No se pudo generar el JPG. Proba recargar la pagina.";
+        $("toast").textContent = "No se pudo generar el JPG.";
+        $("toast").style.display = "block";
+        setTimeout(() => { $("toast").style.display = "none"; $("toast").textContent = "Presupuesto guardado"; }, 3200);
+      }
+    }
+
+    document.querySelectorAll(".home-action").forEach(button => button.addEventListener("click", () => {
+      const target = button.dataset.jump;
+      if (target === "form") {
+        $("budgetForm").scrollIntoView({ behavior: "smooth", block: "start" });
+        setTimeout(() => $("client").focus(), 450);
+      }
+      if (target === "search") {
+        $("search").scrollIntoView({ behavior: "smooth", block: "center" });
+        setTimeout(() => $("search").focus(), 450);
+      }
+      if (target === "records") $("records").scrollIntoView({ behavior: "smooth", block: "center" });
+    }));
+
+    document.querySelectorAll("input, textarea").forEach(input => input.addEventListener("input", event => {
+      if (!event.target.classList.contains("item-price") && event.target.type !== "date" && event.target.id !== "validity" && event.target.id !== "km") {
+        event.target.value = event.target.value.toUpperCase();
+      }
+      if (event.target.id === "km") event.target.value = formatKmValue(event.target.value);
+      if (event.target.id === "validity") event.target.value = event.target.value.replace(/\D/g, "") || "";
+      renderPreview();
+    }));
+
+    $("addItem").addEventListener("click", () => addItem({}));
+    $("addTitle").addEventListener("click", () => addItem({ title: true, sum: false }));
+    $("clearForm").addEventListener("click", () => setForm({ date: today(), validity: "7", items: [{}, {}] }));
+    $("budgetForm").addEventListener("submit", event => {
+      event.preventDefault();
+      const data = formData();
+      const existingIndex = records.findIndex(item => item.id === data.id);
+      if (existingIndex >= 0) records[existingIndex] = data;
+      else records.unshift(data);
+      currentId = data.id;
+      saveRecords();
+      renderRecords();
+      $("toast").style.display = "block";
+      setTimeout(() => $("toast").style.display = "none", 1800);
+    });
+    $("imageBtn").addEventListener("click", saveJpg);
+    $("closeImageModal").addEventListener("click", () => $("imageModal").classList.remove("open"));
+    $("imageModal").addEventListener("click", event => {
+      if (event.target === $("imageModal")) $("imageModal").classList.remove("open");
+    });
+    $("shareImage").addEventListener("click", async () => {
+      if (generatedFile && navigator.canShare && navigator.canShare({ files: [generatedFile] })) {
+        await navigator.share({ files: [generatedFile], title: "Presupuesto Picoservice" });
+      } else {
+        $("toast").textContent = "Si no aparece enviar, descarga el JPG y mandalo desde WhatsApp";
+        $("toast").style.display = "block";
+        setTimeout(() => { $("toast").style.display = "none"; $("toast").textContent = "Presupuesto guardado"; }, 2600);
+      }
+    });
+    $("search").addEventListener("input", renderRecords);
+
+    $("date").value = today();
+    addItem({});
+    addItem({});
+    renderPreview();
+    renderRecords();
+  </script>
+</body>
+</html>
